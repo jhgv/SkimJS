@@ -15,3 +15,7 @@ do{
 }
 while (i<3);
 f;
+
+var c = [false, 3];
+c.head;
+c.lenght;

@@ -22,6 +22,15 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
     stateLookup env var -- crashes if the variable doesn't exist
     e <- evalExpr env expr
     setVar var e
+-- Lists
+evalExpr env (ArrayLit []) = return $ List []
+evalExpr env (ArrayLit [expr]) = do
+    val <- evalExpr env expr
+    return $ List [val]
+evalExpr env (ArrayLit (l:ls)) = do
+    cabeca <- evalExpr env l
+    (List cauda) <- evalExpr env (ArrayLit ls)
+    return $ List (cabeca:cauda)
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil
@@ -68,6 +77,7 @@ evalStmt env (DoWhileStmt stmt expr) = do
     case result of 
         (Bool b) -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
         _ -> error "Boolean expression expected."
+
 
 
 -- Do not touch this one :)
