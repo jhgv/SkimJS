@@ -30,6 +30,33 @@ evalStmt env (VarDeclStmt (decl:ds)) =
     varDecl env decl >> evalStmt env (VarDeclStmt ds)
 evalStmt env (ExprStmt expr) = evalExpr env expr
 
+-- if com um único stmt --
+evalStmt env (IfSingleStmt expr stmt) = do
+    v <- evalExpr env expr
+    case v of
+        (Bool b) -> if (b) then evalStmt env stmt else return Nil
+        _ -> error $ "If não recebeu expressão booleana"
+
+
+evalStmt env (BlockStmt []) = return Nil
+evalStmt env (BlockStmt [stmt]) = evalStmt env stmt
+evalStmt env (BlockStmt (stmt:stmts)) = do
+    cabeca <- evalStmt env stmt
+    evalStmt env (BlockStmt stmts)
+
+-- if com 2 stmts --   
+evalStmt env (IfStmt expr stmt1 stmt2) = do
+    v1 <- evalExpr env expr1
+    v2 <- evalExpr env expr2
+    case v1 of
+        (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
+        _ -> error $ "If não recebeu expressão booleana"
+        --evalStmt env (BlockStmt []) = return Nil
+        --evalStmt env (BlockStmt (stmt:stmts)) = do
+        --    cabeca <- evalStmt env stmt
+        --    evalStmt env (BlockStmt stmts)
+
+
 -- Do not touch this one :)
 evaluate :: StateT -> [Statement] -> StateTransformer Value
 evaluate env [] = return Nil
