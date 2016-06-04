@@ -32,6 +32,18 @@ evalExpr env (ArrayLit (l:ls)) = do
     (List cauda) <- evalExpr env (ArrayLit ls)
     return $ List (cabeca:cauda)
 
+-- lista de literal
+evalExpr env (ArrayLit []) = return Nil
+evalExpr env (ArrayList [expr]) = do
+    e <- evalExpr env expr
+        case e of
+            (Int e) -> if (e) then algo else return Nil
+            _ -> error $ "Lista não feita de literais"
+evalExpr env (ArrayList (a:as)) = do
+
+
+evalExpr env 
+
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil
 evalStmt env (VarDeclStmt []) = return Nil
@@ -39,44 +51,31 @@ evalStmt env (VarDeclStmt (decl:ds)) =
     varDecl env decl >> evalStmt env (VarDeclStmt ds)
 evalStmt env (ExprStmt expr) = evalExpr env expr
 
-
--------------------- OUR STATEMENTS ----------------------------
-
--- if with single statement --
+-- if com um único stmt --
 evalStmt env (IfSingleStmt expr stmt) = do
     v <- evalExpr env expr
     case v of
-        (Bool b) -> if (b) then (evalStmt env stmt) else return Nil
-        _ -> error "Boolean expression expected."
+        (Bool b) -> if (b) then evalStmt env stmt else return Nil
+        _ -> error $ "If não recebeu expressão booleana"
 
--- if/else statement -- 
-evalStmt env (IfStmt expr stmt1 stmt2) = do
-    v1 <- evalExpr env expr
-    case v1 of
-        (Bool b) -> if (b) then (evalStmt env stmt1) else (evalStmt env stmt2)
-        _ -> error "Boolean expression expected."
-
--- blocks of Statement
+-- blocos de statements
 evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt [stmt]) = evalStmt env stmt
 evalStmt env (BlockStmt (stmt:stmts)) = do
     cabeca <- evalStmt env stmt
     evalStmt env (BlockStmt stmts)
 
--- While 
-evalStmt env (WhileStmt expr stmt) = do
-    result <- evalExpr env expr
-    case result of 
-        (Bool b) -> if b then (evalStmt env stmt) >> (evalStmt env (WhileStmt expr stmt)) else return Nil
-        _ -> error "Boolean expression expected."
-
---DoWhile
-evalStmt env (DoWhileStmt stmt expr) = do
-    evalStmt env stmt
-    result <- evalExpr env expr
-    case result of 
-        (Bool b) -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
-        _ -> error "Boolean expression expected."
+-- if com 2 stmts --   
+evalStmt env (IfStmt expr stmt1 stmt2) = do
+    v1 <- evalExpr env expr1
+    v2 <- evalExpr env expr2
+    case v1 of
+        (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
+        _ -> error $ "If não recebeu expressão booleana"
+        --evalStmt env (BlockStmt []) = return Nil
+        --evalStmt env (BlockStmt (stmt:stmts)) = do
+        --    cabeca <- evalStmt env stmt
+        --    evalStmt env (BlockStmt stmts)
 
 
 
