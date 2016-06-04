@@ -23,6 +23,17 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
     e <- evalExpr env expr
     setVar var e
 
+-- lista de literal
+evalExpr env (ArrayLit []) = return Nil
+evalExpr env (ArrayList [expr]) = do
+    e <- evalExpr env expr
+        case e of
+            (Int e) -> 
+evalExpr env (ArrayList (a:as)) = do
+
+
+evalExpr env 
+
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil
 evalStmt env (VarDeclStmt []) = return Nil
@@ -37,7 +48,7 @@ evalStmt env (IfSingleStmt expr stmt) = do
         (Bool b) -> if (b) then evalStmt env stmt else return Nil
         _ -> error $ "If não recebeu expressão booleana"
 
-
+-- blocos de statements
 evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt [stmt]) = evalStmt env stmt
 evalStmt env (BlockStmt (stmt:stmts)) = do
