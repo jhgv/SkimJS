@@ -28,7 +28,8 @@ evalExpr env (ArrayLit []) = return Nil
 evalExpr env (ArrayList [expr]) = do
     e <- evalExpr env expr
         case e of
-            (Int e) -> 
+            (Int e) -> if (e) then algo else return Nil
+            _ -> error $ "Lista não feita de literais"
 evalExpr env (ArrayList (a:as)) = do
 
 
