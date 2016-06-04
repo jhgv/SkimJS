@@ -69,6 +69,38 @@ evalStmt env (DoWhileStmt stmt expr) = do
         (Bool b) -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
         _ -> error "Boolean expression expected."
 
+-- Break
+evalStmt env (BreakStmt Nothing) = return Nil
+
+-- ForStmt for normal
+evalStmt env (ForStmt initial test inc stmt) = do
+    v <- evalForInit env initial
+    testRes <- evalForTest env test -- Asks if the loop should continue 
+    case testRes of
+        (Bool True) -> do
+            evalForInc env inc
+            evalStmt env stmt
+            evalStmt env (ForStmt NoInit test inc stmt)
+        (Bool False) -> return Nil
+        -- TODO Error
+        _ -> error "Not a valid expression"
+
+
+-- Evaluates For increment expression
+evalForInc :: StateT -> (Maybe Expression) -> StateTransformer Value
+evalForInc _ Nothing = return Nil
+evalForInc env (Just inc) = evalExpr env inc
+
+-- Evaluates For test expression
+evalForTest :: StateT -> (Maybe Expression) -> StateTransformer Value
+evalForTest _ Nothing = return $ Bool True
+evalForTest env (Just test) = evalExpr env test
+
+-- Evaluates For initialization
+evalForInit :: StateT -> ForInit -> StateTransformer Value
+evalForInit env NoInit = return Nil
+evalForInit env (VarInit list) = evalStmt env (VarDeclStmt list)
+evalForInit env (ExprInit expr) = evalExpr env expr
 
 -- Do not touch this one :)
 evaluate :: StateT -> [Statement] -> StateTransformer Value
