@@ -30,31 +30,44 @@ evalStmt env (VarDeclStmt (decl:ds)) =
     varDecl env decl >> evalStmt env (VarDeclStmt ds)
 evalStmt env (ExprStmt expr) = evalExpr env expr
 
--- if com um único stmt --
+
+-------------------- OUR STATEMENTS ----------------------------
+
+-- if with single statement --
 evalStmt env (IfSingleStmt expr stmt) = do
     v <- evalExpr env expr
     case v of
-        (Bool b) -> if (b) then evalStmt env stmt else return Nil
-        _ -> error $ "If não recebeu expressão booleana"
+        (Bool b) -> if (b) then (evalStmt env stmt) else return Nil
+        _ -> error "Boolean expression expected."
 
+-- if/else statement -- 
+evalStmt env (IfStmt expr stmt1 stmt2) = do
+    v1 <- evalExpr env expr
+    case v1 of
+        (Bool b) -> if (b) then (evalStmt env stmt1) else (evalStmt env stmt2)
+        _ -> error "Boolean expression expected."
 
+-- blocks of Statement
 evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt [stmt]) = evalStmt env stmt
 evalStmt env (BlockStmt (stmt:stmts)) = do
     cabeca <- evalStmt env stmt
     evalStmt env (BlockStmt stmts)
 
--- if com 2 stmts --   
-evalStmt env (IfStmt expr stmt1 stmt2) = do
-    v1 <- evalExpr env expr1
-    v2 <- evalExpr env expr2
-    case v1 of
-        (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
-        _ -> error $ "If não recebeu expressão booleana"
-        --evalStmt env (BlockStmt []) = return Nil
-        --evalStmt env (BlockStmt (stmt:stmts)) = do
-        --    cabeca <- evalStmt env stmt
-        --    evalStmt env (BlockStmt stmts)
+-- While 
+evalStmt env (WhileStmt expr stmt) = do
+    result <- evalExpr env expr
+    case result of 
+        (Bool b) -> if b then (evalStmt env stmt) >> (evalStmt env (WhileStmt expr stmt)) else return Nil
+        _ -> error "Boolean expression expected."
+
+--DoWhile
+evalStmt env (DoWhileStmt stmt expr) = do
+    evalStmt env stmt
+    result <- evalExpr env expr
+    case result of 
+        (Bool b) -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
+        _ -> error "Boolean expression expected."
 
 
 -- Do not touch this one :)
