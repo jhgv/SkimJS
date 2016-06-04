@@ -12,6 +12,7 @@ var i = 0;
 do{
 	f = f-1;
 	i = i+3;
+	break;
 }
 while (i<3);
 f;
