@@ -1,0 +1,18 @@
+ O que tem que fazer:
+
+
+ - Funções, incluindo recursivas.
+
+ - Variáveis locais e automaticamente globais. O operador de atribuição e operações de leitura devem funcionar levando em conta esses dois novos tipos de variáveis (a versão atual do interpretador funciona apenas com variáveis globais).
+   
+ - Comentários no código. 
+
+ - Laços:
+ 	 - for
+ 	 - while (OK)
+ 	 - comando break.  (OK)
+
+ - Comandos alternativos (if, tanto sem quanto com else) (OK)
+
+  - Listas
+  - funções, head, tail , concat e lenght
