@@ -22,6 +22,7 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
     stateLookup env var -- crashes if the variable doesn't exist
     e <- evalExpr env expr
     setVar var e
+
 -- Lists
 evalExpr env (ArrayLit []) = return $ List []
 evalExpr env (ArrayLit [expr]) = do
@@ -32,17 +33,18 @@ evalExpr env (ArrayLit (l:ls)) = do
     (List cauda) <- evalExpr env (ArrayLit ls)
     return $ List (cabeca:cauda)
 
+
 -- lista de literal
-evalExpr env (ArrayLit []) = return Nil
-evalExpr env (ArrayList [expr]) = do
-    e <- evalExpr env expr
-        case e of
-            (Int e) -> if (e) then algo else return Nil
-            _ -> error $ "Lista não feita de literais"
-evalExpr env (ArrayList (a:as)) = do
+--evalExpr env (ArrayLit []) = return Nil
+--evalExpr env (ArrayList [expr]) = do
+--    e <- evalExpr env expr
+--        case e of
+--            (Int e) -> if (e) then algo else return Nil
+--            _ -> error $ "Lista não feita de literais"
+--evalExpr env (ArrayList (a:as)) = do
 
 
-evalExpr env 
+--evalExpr env 
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil
@@ -63,23 +65,27 @@ evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt [stmt]) = evalStmt env stmt
 evalStmt env (BlockStmt (stmt:stmts)) = do
     cabeca <- evalStmt env stmt
-    evalStmt env (BlockStmt stmts)
+    case cabeca of
+        Break -> return Break
+        _ -> evalStmt env (BlockStmt stmts)
 
+
+-- COMENTAR PRA FUNCIONAR--
 -- if com 2 stmts --   
-evalStmt env (IfStmt expr stmt1 stmt2) = do
-    v1 <- evalExpr env expr1
-    v2 <- evalExpr env expr2
-    case v1 of
-        (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
-        _ -> error $ "If não recebeu expressão booleana"
+--evalStmt env (IfStmt expr stmt1 stmt2) = do
+--    v1 <- evalExpr env expr1
+--    v2 <- evalExpr env expr2
+--    case v1 of
+--        (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
+--        _ -> error $ "If não recebeu expressão booleana"
         --evalStmt env (BlockStmt []) = return Nil
         --evalStmt env (BlockStmt (stmt:stmts)) = do
         --    cabeca <- evalStmt env stmt
         --    evalStmt env (BlockStmt stmts)
+        
 
-
--- Break
-evalStmt env (BreakStmt Nothing) = return Nil
+-- BreakStmt
+evalStmt env (BreakStmt Nothing) = return Break
 
 -- ForStmt for normal
 evalStmt env (ForStmt initial test inc stmt) = do

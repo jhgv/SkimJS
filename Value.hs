@@ -6,6 +6,7 @@ data Value = Bool Bool
     | Var String
     | Nil
     | List [Value]
+    | Break
 
 --
 -- Pretty Printer
@@ -19,6 +20,7 @@ instance Show Value where
   show (Var name) = name
   show Nil = "undefined"
   show (List list) = showListContents list
+  show Break = "Break" 
 
   
 -- This function could be replaced by (unwords.map show). The unwords

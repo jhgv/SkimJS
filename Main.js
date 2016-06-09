@@ -1,31 +1,24 @@
-var x = 0, y = 10;
-x + y;
+//var x = 1, y = 10;
+//x = x + y;
 
-var castor = true;
-if (castor == true) {
-	castor = false;
+//testando o break dentro do blockstatement
+if (true) {
+	break;
+	var x = 8; 
 }
-
-var vernilli = 5;
-if (vernilli > 6) {
-	verinlli = vernilli + 5;
-} else {
-	vernilli = 0;
-}
-
-// se esse comentário aparecer, eu tô fodido
-
-/* se esse comentário aparecer
-eu tô fodido */
 
 // testar o DoWhile
-var f = 0;
+/*var f = 0;
 var i = 0;
-// while (i<3){
-// 	f = f-1;
-// 	i = i+3;
-// 	break;
-// }
+ while (i<3){
+ 	f = f-1;
+ 	i = i+3;
+ 	break;
+ }
+*/
+
+//testando o For
+/*
 for (;;) {
 	f = f + 1;
 	i = i + 1;
@@ -33,4 +26,4 @@ for (;;) {
 	
 };
 f;
-
+*/
