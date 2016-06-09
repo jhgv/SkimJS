@@ -53,13 +53,6 @@ evalStmt env (VarDeclStmt (decl:ds)) =
     varDecl env decl >> evalStmt env (VarDeclStmt ds)
 evalStmt env (ExprStmt expr) = evalExpr env expr
 
--- if com um único stmt --
-evalStmt env (IfSingleStmt expr stmt) = do
-    v <- evalExpr env expr
-    case v of
-        (Bool b) -> if (b) then evalStmt env stmt else return Nil
-        _ -> error $ "If não recebeu expressão booleana"
-
 -- blocos de statements
 evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt [stmt]) = evalStmt env stmt
@@ -70,19 +63,20 @@ evalStmt env (BlockStmt (stmt:stmts)) = do
         _ -> evalStmt env (BlockStmt stmts)
 
 
--- COMENTAR PRA FUNCIONAR--
--- if com 2 stmts --   
---evalStmt env (IfStmt expr stmt1 stmt2) = do
---    v1 <- evalExpr env expr1
---    v2 <- evalExpr env expr2
---    case v1 of
---        (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
---        _ -> error $ "If não recebeu expressão booleana"
-        --evalStmt env (BlockStmt []) = return Nil
-        --evalStmt env (BlockStmt (stmt:stmts)) = do
-        --    cabeca <- evalStmt env stmt
-        --    evalStmt env (BlockStmt stmts)
-        
+-- if com um único stmt --
+evalStmt env (IfSingleStmt expr stmt) = do
+    v <- evalExpr env expr
+    case v of
+        (Bool b) -> if (b) then evalStmt env stmt else return Nil
+        _ -> error $ "Not a valid expression"
+
+
+-- if com 2 stmts --   if x then stmt1 else stmt2
+evalStmt env (IfStmt expr stmt1 stmt2) = do
+    v <- evalExpr env expr
+    case v of
+        (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
+        _ -> error $ "Not a valid expression"
 
 -- BreakStmt
 evalStmt env (BreakStmt Nothing) = return Break
