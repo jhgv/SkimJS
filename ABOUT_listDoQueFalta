@@ -3,16 +3,25 @@
 
  - Funções, incluindo recursivas.
 
- - Variáveis locais e automaticamente globais. O operador de atribuição e operações de leitura devem funcionar levando em conta esses dois novos tipos de variáveis (a versão atual do interpretador funciona apenas com variáveis globais).
+ - Variáveis locais
+ 
+ - Variáveis automaticamente globais.
+ OBS:O operador de atribuição e operações de leitura devem funcionar levando em conta esses dois novos tipos de variáveis (a versão atual do interpretador funciona apenas com variáveis globais).
    
- - Comentários no código. 
+ - Comentários no código. (OK por default)
 
  - Laços:
  	 - for
- 	 - while (OK)
- 	 - comando break.  (OK)
+ 	 - while (?)
+ 	 - comando break.  (FALTA PRA tratar o FOR e WHILE)
 
- - Comandos alternativos (if, tanto sem quanto com else) (OK)
+ - Comandos alternativos 
+   - if (single) (OK)
+   - if/else  (OK)
 
   - Listas
-  - funções, head, tail , concat e lenght
+ 
+  - função head
+  - função tail
+  - função concat
+  - função lenght
