@@ -78,6 +78,22 @@ evalStmt env (IfStmt expr stmt1 stmt2) = do
         (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
         _ -> error $ "Not a valid expression"
 
+
+-- While 
+evalStmt env (WhileStmt expr stmt) = do
+    result <- evalExpr env expr
+    case result of 
+        (Bool b) -> if b then (evalStmt env stmt) >> (evalStmt env (WhileStmt expr stmt)) else return Nil
+        _ -> error "Boolean expression expected."
+
+--DoWhile
+evalStmt env (DoWhileStmt stmt expr) = do
+    evalStmt env stmt
+    result <- evalExpr env expr
+    case result of 
+        (Bool b) -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
+        _ -> error "Boolean expression expected."
+
 -- BreakStmt
 evalStmt env (BreakStmt Nothing) = return Break
 

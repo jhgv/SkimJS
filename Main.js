@@ -19,16 +19,16 @@ if(a>1){
 	var c=3;
 }
 
-/*
+
 // testar o DoWhile
 var f = 0;
 var i = 0;
  while (i<3){
- 	break;
+ 	break; //isso aqui acho que não tah pegando
  	f = f-1;
  	i = i+3;
  }
-*/
+
 
 //testando o For
 /*
