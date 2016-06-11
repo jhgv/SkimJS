@@ -55,6 +55,7 @@ evalStmt env (BlockStmt [stmt]) = evalStmt env stmt
 evalStmt env (BlockStmt (stmt:stmts)) = do
     cabeca <- evalStmt env stmt
     evalStmt env (BlockStmt stmts)
+    
 
 -- if com 2 stmts --   
 evalStmt env (IfStmt expr stmt1 stmt2) = do
