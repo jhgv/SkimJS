@@ -23,17 +23,28 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
     e <- evalExpr env expr
     setVar var e
 
+-- Lists
+evalExpr env (ArrayLit []) = return $ List []
+evalExpr env (ArrayLit [expr]) = do
+    val <- evalExpr env expr
+    return $ List [val]
+evalExpr env (ArrayLit (l:ls)) = do
+    cabeca <- evalExpr env l
+    (List cauda) <- evalExpr env (ArrayLit ls)
+    return $ List (cabeca:cauda)
+
+
 -- lista de literal
-evalExpr env (ArrayLit []) = return Nil
-evalExpr env (ArrayList [expr]) = do
-    e <- evalExpr env expr
-        case e of
-            (Int e) -> if (e) then algo else return Nil
-            _ -> error $ "Lista não feita de literais"
-evalExpr env (ArrayList (a:as)) = do
+--evalExpr env (ArrayLit []) = return Nil
+--evalExpr env (ArrayList [expr]) = do
+--    e <- evalExpr env expr
+--        case e of
+--            (Int e) -> if (e) then algo else return Nil
+--            _ -> error $ "Lista não feita de literais"
+--evalExpr env (ArrayList (a:as)) = do
 
 
-evalExpr env 
+--evalExpr env 
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil
@@ -42,12 +53,22 @@ evalStmt env (VarDeclStmt (decl:ds)) =
     varDecl env decl >> evalStmt env (VarDeclStmt ds)
 evalStmt env (ExprStmt expr) = evalExpr env expr
 
+-- blocos de statements
+evalStmt env (BlockStmt []) = return Nil
+evalStmt env (BlockStmt [stmt]) = evalStmt env stmt
+evalStmt env (BlockStmt (stmt:stmts)) = do
+    cabeca <- evalStmt env stmt
+    case cabeca of
+        Break -> return Break
+        _ -> evalStmt env (BlockStmt stmts)
+
+
 -- if com um único stmt --
 evalStmt env (IfSingleStmt expr stmt) = do
     v <- evalExpr env expr
     case v of
         (Bool b) -> if (b) then evalStmt env stmt else return Nil
-        _ -> error $ "If não recebeu expressão booleana"
+        _ -> error $ "Not a valid expression"
 
 -- blocos de statements
 evalStmt env (BlockStmt []) = return Nil
@@ -55,20 +76,62 @@ evalStmt env (BlockStmt [stmt]) = evalStmt env stmt
 evalStmt env (BlockStmt (stmt:stmts)) = do
     cabeca <- evalStmt env stmt
     evalStmt env (BlockStmt stmts)
-    
 
--- if com 2 stmts --   
+-- if com 2 stmts --   if x then stmt1 else stmt2
 evalStmt env (IfStmt expr stmt1 stmt2) = do
-    v1 <- evalExpr env expr1
-    v2 <- evalExpr env expr2
-    case v1 of
+    v <- evalExpr env expr
+    case v of
         (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
-        _ -> error $ "If não recebeu expressão booleana"
-        --evalStmt env (BlockStmt []) = return Nil
-        --evalStmt env (BlockStmt (stmt:stmts)) = do
-        --    cabeca <- evalStmt env stmt
-        --    evalStmt env (BlockStmt stmts)
+        _ -> error $ "Not a valid expression"
 
+
+-- While 
+evalStmt env (WhileStmt expr stmt) = do
+    result <- evalExpr env expr
+    case result of 
+        (Bool b) -> if b then (evalStmt env stmt) >> (evalStmt env (WhileStmt expr stmt)) else return Nil
+        _ -> error "Boolean expression expected."
+
+--DoWhile
+evalStmt env (DoWhileStmt stmt expr) = do
+    evalStmt env stmt
+    result <- evalExpr env expr
+    case result of 
+        (Bool b) -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
+        _ -> error "Boolean expression expected."
+
+-- BreakStmt
+evalStmt env (BreakStmt Nothing) = return Break
+
+-- ForStmt for normal
+evalStmt env (ForStmt initial test inc stmt) = do
+    v <- evalForInit env initial
+    testRes <- evalForTest env test -- Asks if the loop should continue 
+    case testRes of
+        (Bool True) -> do
+            evalForInc env inc
+            evalStmt env stmt
+            evalStmt env (ForStmt NoInit test inc stmt)
+        (Bool False) -> return Nil
+        -- TODO Error
+        _ -> error "Not a valid expression"
+
+
+-- Evaluates For increment expression
+evalForInc :: StateT -> (Maybe Expression) -> StateTransformer Value
+evalForInc _ Nothing = return Nil
+evalForInc env (Just inc) = evalExpr env inc
+
+-- Evaluates For test expression
+evalForTest :: StateT -> (Maybe Expression) -> StateTransformer Value
+evalForTest _ Nothing = return $ Bool True
+evalForTest env (Just test) = evalExpr env test
+
+-- Evaluates For initialization
+evalForInit :: StateT -> ForInit -> StateTransformer Value
+evalForInit env NoInit = return Nil
+evalForInit env (VarInit list) = evalStmt env (VarDeclStmt list)
+evalForInit env (ExprInit expr) = evalExpr env expr
 
 -- Do not touch this one :)
 evaluate :: StateT -> [Statement] -> StateTransformer Value
