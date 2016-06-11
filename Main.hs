@@ -34,7 +34,7 @@ evalExpr env (ArrayLit (l:ls)) = do
     return $ List (cabeca:cauda)
 
 
--- lista de literal
+----lista de literal
 --evalExpr env (ArrayLit []) = return Nil
 --evalExpr env (ArrayList [expr]) = do
 --    e <- evalExpr env expr
@@ -42,6 +42,8 @@ evalExpr env (ArrayLit (l:ls)) = do
 --            (Int e) -> if (e) then algo else return Nil
 --            _ -> error $ "Lista não feita de literais"
 --evalExpr env (ArrayList (a:as)) = do
+
+
 
 
 --evalExpr env 

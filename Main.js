@@ -29,6 +29,7 @@ var i = 0;
  	i = i+3;
  }
 
+var x = [1];
 
 //testando o For
 /*
