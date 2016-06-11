@@ -30,18 +30,19 @@
 //  }
 
 var f = 0;
-var i = 0;
+// var i = 0;
 
-do {
- 	f = f - 1;
- 	i = i + 1;
- 	if (i > 5) {
- 		break;
- 	};
- } while (i < 10);
- f;
-
-
+// for (;;) {
+// 	f = f - 1;
+// 	i = i + 1;
+// 	if (i > 5) {break;};
+// };
+// f;
+var a = [1, 2, 3, 4, 5];
+for (var x in a){
+	f = f + 1;
+}
+f;
 //testando o For
 /*
 for (;;) {

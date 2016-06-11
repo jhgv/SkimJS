@@ -125,11 +125,24 @@ evalStmt env (ForStmt initial test inc stmt) = do
     case testRes of
         (Bool True) -> do
             evalForInc env inc
-            evalStmt env stmt
-            evalStmt env (ForStmt NoInit test inc stmt)
+            d <- evalStmt env stmt
+            case d of
+                Break -> return Nil
+                Continue -> evalStmt env (ForStmt NoInit test inc stmt)
+                _ -> evalStmt env (ForStmt NoInit test inc stmt)
         (Bool False) -> return Nil
         -- TODO Error
         _ -> error "Not a valid expression"
+
+-- ForInStmt
+evalStmt env (ForInStmt initial expr stmt) = do
+    v <- evalForInInit env initial
+    d <- evalStmt env stmt
+    case d of
+        Break -> return Nil
+        Continue -> evalStmt env (ForInStmt initial expr stmt)
+        _ -> evalStmt env (ForInStmt initial expr stmt)
+
 
 
 -- Evaluates For increment expression
@@ -147,6 +160,23 @@ evalForInit :: StateT -> ForInit -> StateTransformer Value
 evalForInit env NoInit = return Nil
 evalForInit env (VarInit list) = evalStmt env (VarDeclStmt list)
 evalForInit env (ExprInit expr) = evalExpr env expr
+
+-- Evaluates ForIn initialization
+evalForInInit :: StateT -> ForInInit -> StateTransformer Value
+evalForInInit env (ForInVar (Id id)) = do
+    varDecl env (VarDecl (Id id) Nothing)
+evalForInInit env (ForInLVal (LVar id)) = do
+    varDecl env (VarDecl (Id id) Nothing)
+
+-- Loop forIn
+-- forLoop :: StateT -> String -> [Value] -> Statement -> StateTransformer Value
+-- forLoop env idd (l:ls) stmt = do
+--    setVar idd l
+--    res <- evalStmt env stmt
+--    case res of
+--       Break -> return Break
+--       Continue -> forLoop env idd ls stmt
+--       _ -> forLoop env idd ls stmt
 
 -- Do not touch this one :)
 evaluate :: StateT -> [Statement] -> StateTransformer Value

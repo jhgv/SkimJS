@@ -22,6 +22,7 @@ instance Show Value where
   show Nil = "undefined"
   show (List list) = showListContents list
   show Break = "Break" 
+  show Continue = "Continue" 
 
   
 -- This function could be replaced by (unwords.map show). The unwords
