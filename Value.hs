@@ -8,6 +8,8 @@ data Value = Bool Bool
     | List List
     | List [Value]
     | Break
+    | Continue
+
 --
 -- Pretty Printer
 --
