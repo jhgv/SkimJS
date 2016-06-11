@@ -78,24 +78,45 @@ evalStmt env (IfStmt expr stmt1 stmt2) = do
         (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
         _ -> error $ "Not a valid expression"
 
-
 -- While 
 evalStmt env (WhileStmt expr stmt) = do
-    result <- evalExpr env expr
-    case result of 
-        (Bool b) -> if b then (evalStmt env stmt) >> (evalStmt env (WhileStmt expr stmt)) else return Nil
-        _ -> error "Boolean expression expected."
+    Bool b <- evalExpr env expr
+    if b then do 
+        v <- evalStmt env stmt
+        case v of
+            Break -> return Nil
+            Continue -> evalStmt env (WhileStmt expr stmt)
+            _ -> evalStmt env (WhileStmt expr stmt)
+        
+    else return Nil
+
+-- While 
+-- evalStmt env (WhileStmt expr stmt) = do
+--    result <- evalExpr env expr
+--    case result of 
+--        (Bool b) -> if b then (evalStmt env stmt) >> (evalStmt env (WhileStmt expr stmt)) else return Nil
+--        _ -> error "Boolean expression expected."
 
 --DoWhile
 evalStmt env (DoWhileStmt stmt expr) = do
-    evalStmt env stmt
-    result <- evalExpr env expr
-    case result of 
-        (Bool b) -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
-        _ -> error "Boolean expression expected."
+    v <- evalStmt env stmt
+    Bool b <- evalExpr env expr
+    case v of 
+        Break -> return Nil
+        Continue -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
+        _ -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
+        
+--    evalStmt env stmt
+--    result <- evalExpr env expr
+--    case result of 
+--       (Bool b) -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
+--        _ -> error "Boolean expression expected."
 
 -- BreakStmt
-evalStmt env (BreakStmt Nothing) = return Break
+evalStmt env (BreakStmt Nothing) = return Break;
+
+-- ContinueStmt
+evalStmt env (ContinueStmt Nothing) = return Continue;
 
 -- ForStmt for normal
 evalStmt env (ForStmt initial test inc stmt) = do

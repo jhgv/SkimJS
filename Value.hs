@@ -7,6 +7,7 @@ data Value = Bool Bool
     | Nil
     | List [Value]
     | Break
+    | Continue
 
 --
 -- Pretty Printer
