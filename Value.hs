@@ -28,7 +28,7 @@ instance Show Value where
   show Continue = "Continue"
   show (Function (Id name) args stmt) = "Function " ++ name
   show (Return (Just val)) = show val
-  show (Return _) = "return"
+  show (Return _) = "return
 
   
 -- This function could be replaced by (unwords.map show). The unwords

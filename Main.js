@@ -30,6 +30,20 @@
 //  }
 
 var f = 0;
+var i = 0;
+
+do {
+ 	f = f - 1;
+ 	i = i + 1;
+ 	if (i > 5) {
+ 		break;
+ 	};
+ } while (i < 10);
+ f;
+
+var x = [1, 2, "penis"];
+var y = [4, 5, 5.2];
+
 // var i = 0;
 
 // for (;;) {
