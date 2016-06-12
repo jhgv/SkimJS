@@ -24,6 +24,7 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
     e <- evalExpr env expr
     setVar var e
 
+-- x.len / x.tail /x.head
 evalExpr env (DotRef expr id) = do
     var <- evalExpr env expr
     case id of -- checa qual é a propriedade chamada
@@ -32,11 +33,23 @@ evalExpr env (DotRef expr id) = do
                 (List []) -> return (List [])
                 (List (l:ls)) -> return l
                 _ -> return $ Error "Não é um tipo válido"
+
         (Id "tail") -> do
             case var of
                 (List []) -> return (List [])
                 (List (l:ls)) -> return $ List ls
                 _ -> return $ Error "Não é um tipo válido"
+                
+        (Id "len") -> do
+            case var of
+                (List _) -> do
+                    return $ Int $ count var
+                    where 
+                        count (List []) = 0 
+                        count (List (l:ls)) = 1 + (count (List ls))
+                _ -> return $ Error "Não é um tipo válido"
+        _ -> return $ Error "Não é uma função válida"
+
 
 -- Listas
 evalExpr env (ArrayLit []) = return $ List []
