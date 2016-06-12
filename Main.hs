@@ -6,20 +6,6 @@ import Data.Map as Map (Map, insert, lookup, union, toList, empty)
 import Debug.Trace
 import Value
 
-
---evalExpr env (DotRef expr id) = do
---    var <- evalExpr env expr
---    case var of
---        (Id "head") -> do
---            (Lista []) -> return (Lista []) $ "Erro de tipo"
---            (Lista (l:ls)) -> return l
---            _ -> return $ "Não é um tipo válido"
---        (Id "tail") -> do
---            (Lista []) -> return (Lista []) $ "Erro de tipo"
---            (Lista (l:ls)) -> return ls
---            _ -> return $ "Não é um tipo válido"
-
-
 --
 -- Evaluate functions
 --
@@ -28,6 +14,7 @@ evalExpr :: StateT -> Expression -> StateTransformer Value
 evalExpr env (VarRef (Id id)) = stateLookup env id
 evalExpr env (IntLit int) = return $ Int int
 evalExpr env (BoolLit bool) = return $ Bool bool
+evalExpr env (StringLit string) = return $ String string
 evalExpr env (InfixExpr op expr1 expr2) = do
     v1 <- evalExpr env expr1
     v2 <- evalExpr env expr2
@@ -37,28 +24,19 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
     e <- evalExpr env expr
     setVar var e
 
-
-
 evalExpr env (DotRef expr id) = do
     var <- evalExpr env expr
     case id of -- checa qual é a propriedade chamada
         (Id "head") -> do
             case var of -- checa qual o formato da lista
-                (List []) -> return (List []) $ "Erro de tipo"
+                (List []) -> return (List [])
                 (List (l:ls)) -> return l
-                _ -> return $ "Não é um tipo válido"
+                _ -> return $ Error "Não é um tipo válido"
         (Id "tail") -> do
             case var of
-                (List []) -> return (List []) $ "Erro de tipo"
-                (List (l:ls)) -> return ls
-                _ -> return $ "Não é um tipo válido"
-
-
-
-
-
-
-
+                (List []) -> return (List [])
+                (List (l:ls)) -> return $ List ls
+                _ -> return $ Error "Não é um tipo válido"
 
 -- Listas
 evalExpr env (ArrayLit []) = return $ List []
@@ -71,34 +49,22 @@ evalExpr env (ArrayLit (l:ls)) = do
     return $ List (cabeca:cauda)
 
 evalExpr env (CallExpr name argsExpr) = do
-    func <- evalExpr env name
-    case func of
-        (Function idd args stmts) -> do
-            result <- mapM (evalExpr env) argsExpr
-            let vars = (zip (map (\(Id a) -> a) args) result)
-            setVars vars
-            res <- evalStmt env (BlockStmt stmts)
-            case res of
-                (Return val) -> return $ (Return val)
-                _ -> return res
-
-
-
-evalExpr env (StringLit string) = return $ String string
-
-----lista de literal
---evalExpr env (ArrayLit []) = return Nil
---evalExpr env (ArrayList [expr]) = do
---    e <- evalExpr env expr
---        case e of
---            (Int e) -> if (e) then algo else return Nil
---            _ -> error $ "Lista não feita de literais"
---evalExpr env (ArrayList (a:as)) = do
-
-
-
-
---evalExpr env 
+    case name of
+        (DotRef list (Id "concat")) -> do
+            (List list1) <- evalExpr env list
+            (List list2) <- evalExpr env (head argsExpr)
+            return $ List $ list1 ++ list2
+        _ -> do    
+            func <- evalExpr env name
+            case func of
+                (Function idd args stmts) -> do
+                    result <- mapM (evalExpr env) argsExpr
+                    let vars = (zip (map (\(Id a) -> a) args) result)
+                    setVars vars
+                    res <- evalStmt env (BlockStmt stmts)
+                    case res of
+                        (Return val) -> return $ (Return val)
+                        _ -> return res
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil
@@ -150,13 +116,6 @@ evalStmt env (WhileStmt expr stmt) = do
         
     else return Nil
 
--- While 
--- evalStmt env (WhileStmt expr stmt) = do
---    result <- evalExpr env expr
---    case result of 
---        (Bool b) -> if b then (evalStmt env stmt) >> (evalStmt env (WhileStmt expr stmt)) else return Nil
---        _ -> error "Boolean expression expected."
-
 --DoWhile
 evalStmt env (DoWhileStmt stmt expr) = do
     v <- evalStmt env stmt
@@ -164,13 +123,7 @@ evalStmt env (DoWhileStmt stmt expr) = do
     case v of 
         Break -> return Nil
         Continue -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
-        _ -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
-        
---    evalStmt env stmt
---    result <- evalExpr env expr
---    case result of 
---       (Bool b) -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
---        _ -> error "Boolean expression expected."
+        _ -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil        
 
 -- BreakStmt
 evalStmt env (BreakStmt Nothing) = return Break;
