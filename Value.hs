@@ -5,11 +5,12 @@ data Value = Bool Bool
     | String String
     | Var String
     | Nil
-    | List List
     | List [Value]
-    | Break
+    | Break 
     | Continue
-
+    | Double Double
+    | Float Float
+    | Error String
 --
 -- Pretty Printer
 --

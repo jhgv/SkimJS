@@ -41,7 +41,9 @@ do {
  } while (i < 10);
  f;
 
-var x = [1];
+var x = [1, 2, "penis"];
+var y = [4, 5, 5.2];
+
 
 //testando o For
 /*

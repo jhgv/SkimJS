@@ -6,6 +6,20 @@ import Data.Map as Map (Map, insert, lookup, union, toList, empty)
 import Debug.Trace
 import Value
 
+
+--evalExpr env (DotRef expr id) = do
+--    var <- evalExpr env expr
+--    case var of
+--        (Id "head") -> do
+--            (Lista []) -> return (Lista []) $ "Erro de tipo"
+--            (Lista (l:ls)) -> return l
+--            _ -> return $ "Não é um tipo válido"
+--        (Id "tail") -> do
+--            (Lista []) -> return (Lista []) $ "Erro de tipo"
+--            (Lista (l:ls)) -> return ls
+--            _ -> return $ "Não é um tipo válido"
+
+
 --
 -- Evaluate functions
 --
@@ -23,7 +37,30 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
     e <- evalExpr env expr
     setVar var e
 
--- Lists
+
+
+evalExpr env (DotRef expr id) = do
+    var <- evalExpr env expr
+    case id of -- checa qual é a propriedade chamada
+        (Id "head") -> do
+            case var of -- checa qual o formato da lista
+                (List []) -> return (List []) $ "Erro de tipo"
+                (List (l:ls)) -> return l
+                _ -> return $ "Não é um tipo válido"
+        (Id "tail") -> do
+            case var of
+                (List []) -> return (List []) $ "Erro de tipo"
+                (List (l:ls)) -> return ls
+                _ -> return $ "Não é um tipo válido"
+
+
+
+
+
+
+
+
+-- Listas
 evalExpr env (ArrayLit []) = return $ List []
 evalExpr env (ArrayLit [expr]) = do
     val <- evalExpr env expr
@@ -33,6 +70,10 @@ evalExpr env (ArrayLit (l:ls)) = do
     (List cauda) <- evalExpr env (ArrayLit ls)
     return $ List (cabeca:cauda)
 
+
+
+
+evalExpr env (StringLit string) = return $ String string
 
 ----lista de literal
 --evalExpr env (ArrayLit []) = return Nil
