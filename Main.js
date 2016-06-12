@@ -38,11 +38,21 @@ var f = 0;
 // 	if (i > 5) {break;};
 // };
 // f;
-var a = [1, 2, 3, 4, 5];
-for (var x in a){
+var a = [true, 1];
+var b = [true, 1];
+if (a != b){
 	f = f + 1;
 }
 f;
+a != b;
+
+function peppa(i) {
+	if (i > 2) {
+		return peppa(i-1);
+	}
+	return i + 10;
+}
+peppa(10);
 //testando o For
 /*
 for (;;) {

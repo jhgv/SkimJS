@@ -33,6 +33,17 @@ evalExpr env (ArrayLit (l:ls)) = do
     (List cauda) <- evalExpr env (ArrayLit ls)
     return $ List (cabeca:cauda)
 
+evalExpr env (CallExpr name argsExpr) = do
+    func <- evalExpr env name
+    case func of
+        (Function idd args stmts) -> do
+            result <- mapM (evalExpr env) argsExpr
+            let vars = (zip (map (\(Id a) -> a) args) result)
+            setVars vars
+            res <- evalStmt env (BlockStmt stmts)
+            case res of
+                (Return val) -> return $ (Return val)
+                _ -> return res
 
 -- lista de literal
 --evalExpr env (ArrayLit []) = return Nil
@@ -118,6 +129,14 @@ evalStmt env (BreakStmt Nothing) = return Break;
 -- ContinueStmt
 evalStmt env (ContinueStmt Nothing) = return Continue;
 
+-- ReturnStmt
+evalStmt env (ReturnStmt maybeExpr) = do
+    case maybeExpr of
+        (Just expr) -> do
+            val <- evalExpr env expr
+            return $ (Return (Just val))
+        Nothing -> return $ (Return Nothing)
+
 -- ForStmt for normal
 evalStmt env (ForStmt initial test inc stmt) = do
     v <- evalForInit env initial
@@ -141,7 +160,7 @@ evalStmt env (ForInStmt initial expr stmt) = do
         (ForInVar (Id id)) -> forLoop env id list stmt
         (ForInLVal (LVar id)) -> forLoop env id list stmt
 
-
+evalStmt env (FunctionStmt id@(Id funcId) args stmts) = setVar funcId (Function id args stmts)
 
 -- Evaluates For increment expression
 evalForInc :: StateT -> (Maybe Expression) -> StateTransformer Value
@@ -158,7 +177,6 @@ evalForInit :: StateT -> ForInit -> StateTransformer Value
 evalForInit env NoInit = return Nil
 evalForInit env (VarInit list) = evalStmt env (VarDeclStmt list)
 evalForInit env (ExprInit expr) = evalExpr env expr
-
 
 -- Loop forIn
 forLoop :: StateT -> String -> Value -> Statement -> StateTransformer Value
@@ -191,10 +209,30 @@ infixOp env OpLEq  (Int  v1) (Int  v2) = return $ Bool $ v1 <= v2
 infixOp env OpGT   (Int  v1) (Int  v2) = return $ Bool $ v1 > v2
 infixOp env OpGEq  (Int  v1) (Int  v2) = return $ Bool $ v1 >= v2
 infixOp env OpEq   (Int  v1) (Int  v2) = return $ Bool $ v1 == v2
+infixOp env OpNEq  (Int  v1) (Int  v2) = return $ Bool $ v1 /= v2
 infixOp env OpEq   (Bool v1) (Bool v2) = return $ Bool $ v1 == v2
 infixOp env OpNEq  (Bool v1) (Bool v2) = return $ Bool $ v1 /= v2
 infixOp env OpLAnd (Bool v1) (Bool v2) = return $ Bool $ v1 && v2
 infixOp env OpLOr  (Bool v1) (Bool v2) = return $ Bool $ v1 || v2
+
+-- comparação de listas
+-- igualdade
+infixOp env OpEq   (List  []) (List  []) = return $ Bool True
+infixOp env OpEq   (List  []) (List  _) = return $ Bool False
+infixOp env OpEq   (List  _) (List  []) = return $ Bool False
+infixOp env OpEq   (List  (l:ls)) (List  (x:xs)) = do
+    result <- infixOp env OpEq l x
+    resto <- infixOp env OpEq (List ls) (List xs)
+    infixOp env OpLAnd result resto
+
+-- diferença
+infixOp env OpNEq   (List  []) (List  []) = return $ Bool False
+infixOp env OpNEq   (List  []) (List  _) = return $ Bool True
+infixOp env OpNEq   (List  _) (List  []) = return $ Bool True
+infixOp env OpNEq   (List  (l:ls)) (List  (x:xs)) = do
+    result <- infixOp env OpNEq l x
+    resto <- infixOp env OpNEq (List ls) (List xs)
+    infixOp env OpLOr result resto
 
 --
 -- Environment and auxiliary functions
@@ -220,6 +258,12 @@ varDecl env (VarDecl (Id id) maybeExpr) = do
 
 setVar :: String -> Value -> StateTransformer Value
 setVar var val = ST $ \s -> (val, insert var val s)
+
+setVars :: [(String, Value)] -> StateTransformer Value
+setVars [] = return Nil
+setVars ((id, val):vars) = do
+    setVar id val
+    setVars vars
 
 --
 -- Types and boilerplate
