@@ -44,7 +44,19 @@ do {
 var x = [1, 2, "penis"];
 var y = [4, 5, 5.2];
 
+// var i = 0;
 
+// for (;;) {
+// 	f = f - 1;
+// 	i = i + 1;
+// 	if (i > 5) {break;};
+// };
+// f;
+var a = [1, 2, 3, 4, 5];
+for (var x in a){
+	f = f + 1;
+}
+f;
 //testando o For
 /*
 for (;;) {

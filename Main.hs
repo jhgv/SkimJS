@@ -174,11 +174,22 @@ evalStmt env (ForStmt initial test inc stmt) = do
     case testRes of
         (Bool True) -> do
             evalForInc env inc
-            evalStmt env stmt
-            evalStmt env (ForStmt NoInit test inc stmt)
+            d <- evalStmt env stmt
+            case d of
+                Break -> return Nil
+                Continue -> evalStmt env (ForStmt NoInit test inc stmt)
+                _ -> evalStmt env (ForStmt NoInit test inc stmt)
         (Bool False) -> return Nil
         -- TODO Error
         _ -> error "Not a valid expression"
+
+-- ForInStmt
+evalStmt env (ForInStmt initial expr stmt) = do
+    list <- evalExpr env expr
+    case initial of
+        (ForInVar (Id id)) -> forLoop env id list stmt
+        (ForInLVal (LVar id)) -> forLoop env id list stmt
+
 
 
 -- Evaluates For increment expression
@@ -196,6 +207,18 @@ evalForInit :: StateT -> ForInit -> StateTransformer Value
 evalForInit env NoInit = return Nil
 evalForInit env (VarInit list) = evalStmt env (VarDeclStmt list)
 evalForInit env (ExprInit expr) = evalExpr env expr
+
+
+-- Loop forIn
+forLoop :: StateT -> String -> Value -> Statement -> StateTransformer Value
+forLoop env idd (List []) stmt = return Break
+forLoop env idd (List (l:ls)) stmt = do
+    setVar idd l
+    res <- evalStmt env stmt
+    case res of
+       Break -> return Break
+       Continue -> forLoop env idd (List ls) stmt
+       _ -> forLoop env idd (List ls) stmt
 
 -- Do not touch this one :)
 evaluate :: StateT -> [Statement] -> StateTransformer Value
