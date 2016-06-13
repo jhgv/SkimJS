@@ -20,26 +20,25 @@ evalExpr env (InfixExpr op expr1 expr2) = do
     v2 <- evalExpr env expr2
     infixOp env op v1 v2
 evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
-    stateLookup env var -- crashes if the variable doesn't exist
+    varScope <- stateLookup env var -- stores wether the variable will be global ou not
     e <- evalExpr env expr
-    setVar var e
+    case varScope of
+        GlobalVar -> createGlobalVar var e
+        _ -> setVar var e -- sets it in the first scope it finds the variable
 
--- x.len / x.tail /x.head
 evalExpr env (DotRef expr id) = do
     var <- evalExpr env expr
-    case id of -- checa qual é a propriedade chamada
+    case id of -- checks which is the called property
         (Id "head") -> do
-            case var of -- checa qual o formato da lista
+            case var of -- checks the list format
                 (List []) -> return (List [])
                 (List (l:ls)) -> return l
                 _ -> return $ Error "Não é um tipo válido"
-
         (Id "tail") -> do
             case var of
                 (List []) -> return (List [])
                 (List (l:ls)) -> return $ List ls
                 _ -> return $ Error "Não é um tipo válido"
-                
         (Id "len") -> do
             case var of
                 (List _) -> do
@@ -49,7 +48,6 @@ evalExpr env (DotRef expr id) = do
                         count (List (l:ls)) = 1 + (count (List ls))
                 _ -> return $ Error "Não é um tipo válido"
         _ -> return $ Error "Não é uma função válida"
-
 
 -- Listas
 evalExpr env (ArrayLit []) = return $ List []
@@ -61,23 +59,28 @@ evalExpr env (ArrayLit (l:ls)) = do
     (List cauda) <- evalExpr env (ArrayLit ls)
     return $ List (cabeca:cauda)
 
+-- Function calls
 evalExpr env (CallExpr name argsExpr) = do
     case name of
         (DotRef list (Id "concat")) -> do
             (List list1) <- evalExpr env list
             (List list2) <- evalExpr env (head argsExpr)
             return $ List $ list1 ++ list2
-        _ -> do    
+        _ -> do -- General function case  
             func <- evalExpr env name
             case func of
                 (Function idd args stmts) -> do
+                    addState env
                     result <- mapM (evalExpr env) argsExpr
                     let vars = (zip (map (\(Id a) -> a) args) result)
-                    setVars vars
+                    createLocalVars vars
                     res <- evalStmt env (BlockStmt stmts)
+                    removeState env
                     case res of
-                        (Return val) -> return $ (Return val)
+                        Return val -> return val
+                        Nil -> return Nil
                         _ -> return res
+                res -> error $ "Deu isso aqui: " ++ (show res)
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 evalStmt env EmptyStmt = return Nil
@@ -93,36 +96,41 @@ evalStmt env (BlockStmt (stmt:stmts)) = do
     cabeca <- evalStmt env stmt
     case cabeca of
         Break -> return Break
+        Return val -> return $ Return val
         _ -> evalStmt env (BlockStmt stmts)
-
 
 -- if com um único stmt --
 evalStmt env (IfSingleStmt expr stmt) = do
     v <- evalExpr env expr
     case v of
-        (Bool b) -> if (b) then evalStmt env stmt else return Nil
+        (Bool b) -> if (b) then do
+            addState env
+            res <- evalStmt env stmt 
+            removeState env
+            return res
+        else return Nil
         _ -> error $ "Not a valid expression"
-
--- blocos de statements
-evalStmt env (BlockStmt []) = return Nil
-evalStmt env (BlockStmt [stmt]) = evalStmt env stmt
-evalStmt env (BlockStmt (stmt:stmts)) = do
-    cabeca <- evalStmt env stmt
-    evalStmt env (BlockStmt stmts)
 
 -- if com 2 stmts --   if x then stmt1 else stmt2
 evalStmt env (IfStmt expr stmt1 stmt2) = do
     v <- evalExpr env expr
     case v of
-        (Bool b) -> if (b) then evalStmt env stmt1 else evalStmt env stmt2
+        (Bool b) -> if (b) then do
+            addState env
+            res <- evalStmt env stmt1
+            removeState env
+            return res
+        else evalStmt env stmt2
         _ -> error $ "Not a valid expression"
 
 -- While 
 evalStmt env (WhileStmt expr stmt) = do
     Bool b <- evalExpr env expr
     if b then do 
-        v <- evalStmt env stmt
-        case v of
+        addState env
+        res <- evalStmt env stmt
+        removeState env
+        case res of
             Break -> return Nil
             Continue -> evalStmt env (WhileStmt expr stmt)
             _ -> evalStmt env (WhileStmt expr stmt)
@@ -131,9 +139,11 @@ evalStmt env (WhileStmt expr stmt) = do
 
 --DoWhile
 evalStmt env (DoWhileStmt stmt expr) = do
-    v <- evalStmt env stmt
+    addState env
+    res <- evalStmt env stmt
+    removeState env
     Bool b <- evalExpr env expr
-    case v of 
+    case res of 
         Break -> return Nil
         Continue -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil
         _ -> if b then evalStmt env (DoWhileStmt stmt expr) else return Nil        
@@ -149,24 +159,27 @@ evalStmt env (ReturnStmt maybeExpr) = do
     case maybeExpr of
         (Just expr) -> do
             val <- evalExpr env expr
-            return $ (Return (Just val))
-        Nothing -> return $ (Return Nothing)
+            return $ Return val
+        Nothing -> return Nil
 
 -- ForStmt for normal
 evalStmt env (ForStmt initial test inc stmt) = do
+    addState env
     v <- evalForInit env initial
     testRes <- evalForTest env test -- Asks if the loop should continue 
     case testRes of
         (Bool True) -> do
             evalForInc env inc
+            addState env
             d <- evalStmt env stmt
+            removeState env
             case d of
-                Break -> return Nil
+                Break -> removeState env >> return Nil
                 Continue -> evalStmt env (ForStmt NoInit test inc stmt)
                 _ -> evalStmt env (ForStmt NoInit test inc stmt)
-        (Bool False) -> return Nil
+        (Bool False) -> removeState env >> return Nil
         -- TODO Error
-        _ -> error "Not a valid expression"
+        _ -> removeState env >> error "Not a valid expression"
 
 -- ForInStmt
 evalStmt env (ForInStmt initial expr stmt) = do
@@ -175,7 +188,7 @@ evalStmt env (ForInStmt initial expr stmt) = do
         (ForInVar (Id id)) -> forLoop env id list stmt
         (ForInLVal (LVar id)) -> forLoop env id list stmt
 
-evalStmt env (FunctionStmt id@(Id funcId) args stmts) = setVar funcId (Function id args stmts)
+evalStmt env (FunctionStmt id@(Id funcId) args stmts) = createGlobalVar funcId (Function id args stmts) --Talvez nao precise ser global
 
 -- Evaluates For increment expression
 evalForInc :: StateT -> (Maybe Expression) -> StateTransformer Value
@@ -197,8 +210,10 @@ evalForInit env (ExprInit expr) = evalExpr env expr
 forLoop :: StateT -> String -> Value -> Statement -> StateTransformer Value
 forLoop env idd (List []) stmt = return Break
 forLoop env idd (List (l:ls)) stmt = do
+    addState env
     setVar idd l
     res <- evalStmt env stmt
+    removeState env
     case res of
        Break -> return Break
        Continue -> forLoop env idd (List ls) stmt
@@ -249,30 +264,55 @@ infixOp env OpNEq   (List  (l:ls)) (List  (x:xs)) = do
     resto <- infixOp env OpNEq (List ls) (List xs)
     infixOp env OpLOr result resto
 
+infixOp _ _ val1 val2 = error $ "infixOp error with " ++ (show val1) ++ " and " ++ (show val2)
+
 --
 -- Environment and auxiliary functions
 --
 
-environment :: Map String Value
-environment = Map.empty
+environment :: StateT
+environment = [Map.empty]
 
+{-
+Procura por uma variavel chamada var por todos os estados, iniciando do mais local até
+o mais global. Caso encontre, apenas retorna seu valor. Caso ele chegue até o estado global
+e não tenha encontrado nada, ele retorna o construtor GlobalVar para indicar que não
+encontrou nada. A flag GlobalVar serve para variaveis automaticamente globais, já que caso ela não
+exista na memória, ~essa atribuição criará uma variável global
+-}
 stateLookup :: StateT -> String -> StateTransformer Value
 stateLookup env var = ST $ \s ->
-    -- this way the error won't be skipped by lazy evaluation
-    case Map.lookup var (union s env) of
-        Nothing -> error $ "Variable " ++ show var ++ " not defiend."
-        Just val -> (val, s)
+    let pops [] _ = Nothing
+        pops (s:states) var = 
+            case Map.lookup var s of
+                Nothing -> pops states var
+                Just v -> Just v
+    in case pops s var of
+        Nothing -> (GlobalVar, s)
+        Just v -> (v, s)
 
+{-
+Declara uma variavel no escopo local, podendo ou não guardar um valor
+-}
 varDecl :: StateT -> VarDecl -> StateTransformer Value
 varDecl env (VarDecl (Id id) maybeExpr) = do
     case maybeExpr of
-        Nothing -> setVar id Nil
+        Nothing -> createLocalVar id Nil
         (Just expr) -> do
             val <- evalExpr env expr
-            setVar id val
+            createLocalVar id val
 
+{-
+Procura, a partir de um estado local até o global, uma variável chamada var para
+setar seu valor como val.
+-}
 setVar :: String -> Value -> StateTransformer Value
-setVar var val = ST $ \s -> (val, insert var val s)
+setVar var val = ST $ \s -> (val, setVarIntoState s)
+    where
+        setVarIntoState [] = error $ "Global is dead"
+        setVarIntoState (state:states) = case (Map.lookup var state) of
+            Nothing -> state:(setVarIntoState states)
+            Just v -> (insert var val state):states
 
 setVars :: [(String, Value)] -> StateTransformer Value
 setVars [] = return Nil
@@ -280,11 +320,44 @@ setVars ((id, val):vars) = do
     setVar id val
     setVars vars
 
+{-
+Cria uma variavel APENAS no escopo local
+-}
+createLocalVar :: String -> Value -> StateTransformer Value
+createLocalVar var val = ST $ \(s:states) -> (val, (insert var val s):states)
+
+createLocalVars :: [(String, Value)] -> StateTransformer Value
+createLocalVars [] = return Nil
+createLocalVars ((id, val):vars) = do
+    createLocalVar id val
+    createLocalVars vars
+
+{-
+Percorre os estados de memória até o global e cria uma variável APENAS no global
+-}
+createGlobalVar :: String -> Value -> StateTransformer Value
+createGlobalVar var val = ST $ \s -> (val, pipi var val s)
+    where
+        pipi var val (state:[]) = (insert var val state):[]
+        pipi var val (state:states) = state:(pipi var val states)
+
+{-
+Adiciona uma camada (escopo) de memória mais local
+-}
+addState :: StateT -> StateTransformer Value
+addState env = ST $ \s -> (Nil, Map.empty:s)
+
+{-
+Remove a camada (escopo) de memória mais local
+-}
+removeState :: StateT -> StateTransformer Value
+removeState env = ST $ \(s:states) -> (Nil, states)
+
 --
 -- Types and boilerplate
 --
 
-type StateT = Map String Value
+type StateT = [Map String Value]
 data StateTransformer t = ST (StateT -> (t, StateT))
 
 instance Monad StateTransformer where
@@ -305,12 +378,13 @@ instance Applicative StateTransformer where
 -- Main and results functions
 --
 
+-- Imprime apenas a memória global
 showResult :: (Value, StateT) -> String
 showResult (val, defs) =
-    show val ++ "\n" ++ show (toList $ union defs environment) ++ "\n"
+    show val ++ "\n" ++ show (toList $ union (last defs) (last environment)) ++ "\n"
 
 getResult :: StateTransformer Value -> (Value, StateT)
-getResult (ST f) = f Map.empty
+getResult (ST f) = f [Map.empty]
 
 main :: IO ()
 main = do

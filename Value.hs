@@ -10,8 +10,9 @@ data Value = Bool Bool
     | Break
     | Continue
     | Function Id [Id] [Statement]
-    | Return (Maybe Value)
+    | Return Value
     | Error String
+    | GlobalVar
 
 --
 -- Pretty Printer
@@ -28,8 +29,8 @@ instance Show Value where
   show Break = "Break" 
   show Continue = "Continue"
   show (Function (Id name) args stmt) = "Function " ++ name
-  show (Return (Just val)) = show val
-  show (Return _) = "Return"
+  show (Return val) = show val
+  show GlobalVar = "global var"
 
   
 -- This function could be replaced by (unwords.map show). The unwords
