@@ -172,24 +172,23 @@ evalStmt env (ReturnStmt maybeExpr) = do
             return $ Return val
         Nothing -> return Nil
 
--- ForStmt for normal
+-- ForStmt for normal (MODIFICADO?)
 evalStmt env (ForStmt initial test inc stmt) = do
-    addState env
     v <- evalForInit env initial
-    testRes <- evalForTest env test -- Asks if the loop should continue 
+    testRes <- evalForTest env test -- Asks if the loop should continue
     case testRes of
         (Bool True) -> do
             addState env
             d <- evalStmt env stmt
             removeState env
-            evalForInc env inc -- incrementado
+            evalForInc env inc
             case d of
-                Break -> removeState env >> return Nil
+                Break -> return Nil
                 Continue -> evalStmt env (ForStmt NoInit test inc stmt)
                 _ -> evalStmt env (ForStmt NoInit test inc stmt)
-        (Bool False) -> removeState env >> return Nil
+        (Bool False) -> return Nil
         -- TODO Error
-        _ -> removeState env >> error "Not a valid expression"
+        _ ->  error "Not a valid expression"
 
 -- ForInStmt
 evalStmt env (ForInStmt initial expr stmt) = do
@@ -271,6 +270,7 @@ infixOp env OpEq   (List  (l:ls)) (List  (x:xs)) = do
     result <- infixOp env OpEq l x
     resto <- infixOp env OpEq (List ls) (List xs)
     infixOp env OpLAnd result resto
+
 
 -- diferença
 infixOp env OpNEq   (List  []) (List  []) = return $ Bool False

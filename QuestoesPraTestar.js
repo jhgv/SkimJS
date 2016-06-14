@@ -93,3 +93,54 @@ function repeteNumero(num){
 repeteNumero(5);
 
 -----------------------------------
+
+var x = []
+ 
+function repeat(num) {
+    for (var i = 0; i < num; i = i + 1) {
+        x = x.concat(num);     
+    }
+}
+ 
+function repeatAll(num) {
+    for (var i = num; i >= 0; i = i - 1) {
+        repeat(i);
+    }
+}
+ 
+repeatAll(4);
+x;
+
+------------------------------------
+function quicksort (array){
+    var less = [];
+    var equal = [];
+    var greater = [];
+    var len = array.len;
+    var pivot = array.head;
+ 
+    if (len == 0){
+        return [];
+    }else{
+       
+    for(var i=0;i<len;i = i+1){
+        var temp = array[i];
+        if (temp < pivot){
+            less = less.concat(temp);
+        }
+        if (temp == pivot){
+            equal = equal.concat(temp);
+        }
+        if (temp>pivot){
+            greater = greater.concat(temp);
+        }
+       
+    }
+    }
+    less = quicksort(less);
+    greater = quicksort(greater);
+    var aux = less.concat(equal);
+    array = aux.concat(greater);
+    return array;
+}
+//var x = quicksort([3,4,1,5,9]);

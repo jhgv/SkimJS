@@ -141,19 +141,72 @@ function quicksort (array){
     array = aux.concat(greater);
     return array;
 }
-var x = quicksort([3,4,1,5,9]);
+var x = quicksort([3,function quicksort (array){
+    var less = [];
+    var equal = [];
+    var greater = [];
+    var len = array.len;
+    var pivot = array.head;
+ 
+    if (len == 0){
+        return [];
+    }else{
+       
+    for(var i=0;i<len;i = i+1){
+        var temp = array[i];
+        if (temp < pivot){
+            less = less.concat(temp);
+        }
+        if (temp == pivot){
+            equal = equal.concat(temp);
+        }
+        if (temp>pivot){
+            greater = greater.concat(temp);
+        }
+       
+    }
+    }
+    less = quicksort(less);
+    greater = quicksort(greater);
+    var aux = less.concat(equal);
+    array = aux.concat(greater);
+    return array;
+}
+//var x = quicksort([3,4,1,5,9]);4,1,5,9]);
 x;
 */
 
 
-function repeteNumero(num){
-	var list = [];
-	var i = 0;
-	while(i<num){
-		list = list.concat(num);
-		i = i+1;
-	}
-	return list;
-} 
-repeteNumero(3);
-
+function quicksort (array){
+    var less = [];
+    var equal = [];
+    var greater = [];
+    var len = array.len;
+    var pivot = array.head;
+ 
+    if (len == 0){
+        return [];
+    }else{
+       
+    for(var i=0;i<len;i = i+1){
+        var temp = array[i];
+        if (temp < pivot){
+            less = less.concat(temp);
+        }
+        if (temp == pivot){
+            equal = equal.concat(temp);
+        }
+        if (temp>pivot){
+            greater = greater.concat(temp);
+        }
+       
+    }
+    }
+    less = quicksort(less);
+    greater = quicksort(greater);
+    var aux = less.concat(equal);
+    array = aux.concat(greater);
+    return array;
+}
+var x = quicksort([3,4,1,5,9]);
+x;
