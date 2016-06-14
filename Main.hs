@@ -59,6 +59,14 @@ evalExpr env (ArrayLit (l:ls)) = do
     (List cauda) <- evalExpr env (ArrayLit ls)
     return $ List (cabeca:cauda)
 
+-- Obter elementos de dentro de listas
+evalExpr env (BracketRef expr indexExpr) = do
+    list <- evalExpr env expr
+    case list of
+        (List _) -> do
+            index <- evalExpr env indexExpr
+            getElementFromList env list index
+
 -- Function calls
 evalExpr env (CallExpr name argsExpr) = do
     case name of
@@ -189,6 +197,13 @@ evalStmt env (ForInStmt initial expr stmt) = do
         (ForInLVal (LVar id)) -> forLoop env id list stmt
 
 evalStmt env (FunctionStmt id@(Id funcId) args stmts) = createGlobalVar funcId (Function id args stmts) --Talvez nao precise ser global
+
+ 
+-- Searches for an element from a list using an index
+getElementFromList :: StateT -> Value -> Value -> StateTransformer Value
+getElementFromList _ (List []) _ = error $ "Index out of bounds exception" -- ver msg melhor?
+getElementFromList env (List (l:ls)) (Int index) = if index == 0 then return l else getElementFromList env (List ls) (Int (index-1))
+
 
 -- Evaluates For increment expression
 evalForInc :: StateT -> (Maybe Expression) -> StateTransformer Value
