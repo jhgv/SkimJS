@@ -14,19 +14,19 @@ evalExpr :: StateT -> Expression -> StateTransformer Value
 evalExpr env (VarRef (Id id)) = stateLookup env id
 evalExpr env (IntLit int) = return $ Int int
 evalExpr env (BoolLit bool) = return $ Bool bool
-evalExpr env (StringLit string) = return $ String string
+evalExpr env (StringLit string) = return $ String string -- our code avaliar string
 evalExpr env (InfixExpr op expr1 expr2) = do
     v1 <- evalExpr env expr1
     v2 <- evalExpr env expr2
     infixOp env op v1 v2
-evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
+evalExpr env (AssignExpr OpAssign (LVar var) expr) = do -- x=0;
     varScope <- stateLookup env var -- stores wether the variable will be global ou not
     e <- evalExpr env expr
     case varScope of
         GlobalVar -> createGlobalVar var e
         _ -> setVar var e -- sets it in the first scope it finds the variable
 
-evalExpr env (DotRef expr id) = do
+evalExpr env (DotRef expr id) = do -- bar.foo
     var <- evalExpr env expr
     case id of -- checks which is the called property
         (Id "head") -> do
@@ -72,8 +72,10 @@ evalExpr env (CallExpr name argsExpr) = do
     case name of
         (DotRef list (Id "concat")) -> do
             (List list1) <- evalExpr env list
-            (List list2) <- evalExpr env (head argsExpr)
-            return $ List $ list1 ++ list2
+            res <- evalExpr env (head argsExpr)
+            case res of
+                (List list2) -> return $ List $ list1 ++ list2
+                val -> return $ List $ list1 ++ [val]
         _ -> do -- General function case  
             func <- evalExpr env name
             case func of
@@ -177,10 +179,10 @@ evalStmt env (ForStmt initial test inc stmt) = do
     testRes <- evalForTest env test -- Asks if the loop should continue 
     case testRes of
         (Bool True) -> do
-            evalForInc env inc
             addState env
             d <- evalStmt env stmt
             removeState env
+            evalForInc env inc -- incrementado
             case d of
                 Break -> removeState env >> return Nil
                 Continue -> evalStmt env (ForStmt NoInit test inc stmt)
@@ -294,7 +296,13 @@ o mais global. Caso encontre, apenas retorna seu valor. Caso ele chegue até o e
 e não tenha encontrado nada, ele retorna o construtor GlobalVar para indicar que não
 encontrou nada. A flag GlobalVar serve para variaveis automaticamente globais, já que caso ela não
 exista na memória, ~essa atribuição criará uma variável global
+-} 
+-- adaptado
+{- serve para pegar o valor de uma variavel ja existente em alguma das
+memorias e tbm é usado pra checar se uma variavel existe na memoria, caso nao exista, ele retorna GlobalVar. 
+Isso serve para a declaração de variaveis automaticamente globais. (ver caso do AssignExpr)
 -}
+
 stateLookup :: StateT -> String -> StateTransformer Value
 stateLookup env var = ST $ \s ->
     let pops [] _ = Nothing
@@ -303,8 +311,8 @@ stateLookup env var = ST $ \s ->
                 Nothing -> pops states var
                 Just v -> Just v
     in case pops s var of
-        Nothing -> (GlobalVar, s)
-        Just v -> (v, s)
+        Nothing -> (GlobalVar, s) -- nao achou em nenhuma memoria
+        Just v -> (v, s) -- achou em alguma memoria
 
 {-
 Declara uma variavel no escopo local, podendo ou não guardar um valor
@@ -342,8 +350,8 @@ createLocalVar :: String -> Value -> StateTransformer Value
 createLocalVar var val = ST $ \(s:states) -> (val, (insert var val s):states)
 
 createLocalVars :: [(String, Value)] -> StateTransformer Value
-createLocalVars [] = return Nil
-createLocalVars ((id, val):vars) = do
+createLocalVars [] = return Nil -- var x;
+createLocalVars ((id, val):vars) = do -- var y = 0;
     createLocalVar id val
     createLocalVars vars
 

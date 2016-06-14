@@ -106,3 +106,39 @@ fat(4);
 var x = [2,4];
 var y = concat (x,[1,3]);
 y;*/
+
+
+function quicksort (array){
+    var less = [];
+    var equal = [];
+    var greater = [];
+    var len = array.len;
+    var pivot = array.head;
+ 
+    if (len == 0){
+        return [];
+    }else{
+ 
+        var i = 0;
+        while(i<len) {
+            var temp = array[i];
+            if (temp < pivot){
+                less = less.concat(temp);
+            }
+            if (temp == pivot){
+                equal = equal.concat(temp);
+            }
+            if (temp>pivot){
+                greater = greater.concat(temp);
+            }
+            i=i+1;
+        }
+    }
+    less = quicksort(less);
+    greater = quicksort(greater);
+    var aux = less.concat(equal);
+    array = aux.concat(greater);
+    return array;
+}
+var x = quicksort([3,4,1,5,9]);
+x;
