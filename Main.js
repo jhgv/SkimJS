@@ -92,6 +92,12 @@ a.head;
 //a.tail;
 a.len;
 
-
+function fat(num) {
+    if(num < 2) {
+        return 1;
+    }
+    return fat(num-1)*num;
+}
+fat(4);
 
 
