@@ -1,4 +1,5 @@
 module Value (Value (..)) where
+import Language.ECMAScript3.Syntax
 
 data Value = Bool Bool
     | Int Int
@@ -6,11 +7,13 @@ data Value = Bool Bool
     | Var String
     | Nil
     | List [Value]
-    | Break 
+    | Break
     | Continue
-    | Double Double
-    | Float Float
+    | Function Id [Id] [Statement]
+    | Return Value
     | Error String
+    | GlobalVar
+
 --
 -- Pretty Printer
 --
@@ -24,7 +27,10 @@ instance Show Value where
   show Nil = "undefined"
   show (List list) = showListContents list
   show Break = "Break" 
-  show Continue = "Continue" 
+  show Continue = "Continue"
+  show (Function (Id name) args stmt) = "Function " ++ name
+  show (Return val) = show val
+  show GlobalVar = "global var"
 
   
 -- This function could be replaced by (unwords.map show). The unwords
