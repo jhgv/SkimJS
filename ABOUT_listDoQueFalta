@@ -1,9 +1,10 @@
  O que tem que fazer:
 
 
- - Funções, incluindo recursivas.
+ - Funções, incluindo recursivas. (OK)
+ // toda função que ele declara, ele grava como global
 
- - Variáveis locais
+ - Variáveis locais 
  
  - Variáveis automaticamente globais.
  OBS:O operador de atribuição e operações de leitura devem funcionar levando em conta esses dois novos tipos de variáveis (a versão atual do interpretador funciona apenas com variáveis globais).
@@ -11,9 +12,9 @@
  - Comentários no código. (OK por default)
 
  - Laços:
- 	 - for
- 	 - while (OK)
- 	 - comando break.  (FALTA PRA tratar o FOR e WHILE)
+ 	 - for 
+ 	 - while (OK) / DoWhile (OK)
+ 	 - comando break.  (FALTA PRA tratar o FOR e WHILE - os meninos fizeram - OK)
 
  - Comandos alternativos 
    - if (single) (OK)
@@ -21,7 +22,7 @@
 
   - Listas
  
-  - função head
-  - função tail
-  - função concat
-  - função lenght
+  - função head (OK)
+  - função tail (OK)
+  - função concat (nao testei ainda!)
+  - função lenght (OK)
