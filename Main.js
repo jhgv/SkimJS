@@ -42,7 +42,7 @@ do {
  } while (i < 10);
  f;
 
-var x = [1, 2, "penis"];
+var x = [1, 2];
 var y = [4, 5, 5.2];
 */
 
@@ -107,7 +107,8 @@ var x = [2,4];
 var y = concat (x,[1,3]);
 y;*/
 
-
+// QUICKSORT TAH PEGANDOOOO
+/*  
 function quicksort (array){
     var less = [];
     var equal = [];
@@ -142,3 +143,17 @@ function quicksort (array){
 }
 var x = quicksort([3,4,1,5,9]);
 x;
+*/
+
+
+function repeteNumero(num){
+	var list = [];
+	var i = 0;
+	while(i<num){
+		list = list.concat(num);
+		i = i+1;
+	}
+	return list;
+} 
+repeteNumero(3);
+
