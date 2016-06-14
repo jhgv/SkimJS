@@ -87,11 +87,13 @@ for (;;) {
 f;
 */
 
-var a = [1,3,5,4,2,4,0];
+/*var a = [1,3,5,4,2,4,0];
 a.head;
 //a.tail;
 a.len;
 
+//teste funcao recursiva
+/*
 function fat(num) {
     if(num < 2) {
         return 1;
@@ -99,5 +101,8 @@ function fat(num) {
     return fat(num-1)*num;
 }
 fat(4);
-
-
+*/
+/*
+var x = [2,4];
+var y = concat (x,[1,3]);
+y;*/
