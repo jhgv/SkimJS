@@ -51,14 +51,7 @@ evalExpr env (DotRef expr id) = do
             case var of
                 (List []) -> return (List []) $ "Erro de tipo"
                 (List (l:ls)) -> return ls
-                _ -> return $ "Não é um tipo válido"
-
-
-
-
-
-
-
+                _ -> return $ "Não é um tipo válido
 
 -- Listas
 evalExpr env (ArrayLit []) = return $ List []
@@ -70,8 +63,13 @@ evalExpr env (ArrayLit (l:ls)) = do
     (List cauda) <- evalExpr env (ArrayLit ls)
     return $ List (cabeca:cauda)
 
-
-
+-- Obter elementos de dentro de listas
+evalExpr env (BracketRef expr indexExpr) = do
+    list <- evalExpr env expr
+    case list of
+        (List _) -> do
+            index <- evalExpr env indexExpr
+            getElementFromList env list index
 
 evalExpr env (StringLit string) = return $ String string
 
@@ -219,6 +217,12 @@ forLoop env idd (List (l:ls)) stmt = do
        Break -> return Break
        Continue -> forLoop env idd (List ls) stmt
        _ -> forLoop env idd (List ls) stmt
+
+-- Searches for an element from a list using an index
+getElementFromList :: StateT -> Value -> Value -> StateTransformer Value
+getElementFromList _ (List []) _ = error $ "Index out of bounds exception" -- ver msg melhor?
+getElementFromList env (List (l:ls)) (Int index) = if index == 0 then return l else getElementFromList env (List ls) (Int (index-1))
+
 
 -- Do not touch this one :)
 evaluate :: StateT -> [Statement] -> StateTransformer Value
