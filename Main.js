@@ -1,25 +1,12 @@
-function merge(a, b)
-{
-    var result = [],
-        k = 0,
-        i = 0,
-        j = 0;
+function len(lista){
 
-    while(a.len > i && b.len > j){
-        if(a[i] <= b[j]){
-            result[k++] = a[i++];
-        } else {
-            result[k++] = b[j++];
-        }
+    if (lista == []) {
+        return 0;
     }
-
-    while(a.len > i) {
-        result[k++] = a[i++];
+    
+    else {
+        return 1 + len(lista.tail);
     }
-
-    while(b.len > j) {
-        result[k++] = b[j++];
-    }
-
-    return result;
 }
+
+len([12312,312,435,6,67,8,69,65]);

@@ -13,6 +13,7 @@ data Value = Bool Bool
     | Return Value
     | Error String
     | GlobalVarFlag
+    | Undefined
 
 --
 -- Pretty Printer
@@ -31,6 +32,7 @@ instance Show Value where
   show (Function (Id name) args stmt) = "Function " ++ name
   show (Return val) = show val
   show GlobalVarFlag = "global var"
+  show Undefined = "undefined"
 
   
 -- This function could be replaced by (unwords.map show). The unwords
