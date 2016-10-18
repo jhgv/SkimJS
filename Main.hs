@@ -23,7 +23,7 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do -- x=0;
     varScope <- stateLookup env var -- stores wether the variable will be global ou not
     e <- evalExpr env expr
     case varScope of
-        GlobalVar -> createGlobalVar var e
+        GlobalVarFlag -> createGlobalVar var e -- create a global var when the assigned variable didnt exist before. It means that the lookup found nothing
         _ -> setVar var e -- sets it in the first scope it finds the variable
 
 evalExpr env (DotRef expr id) = do -- bar.foo
@@ -81,8 +81,8 @@ evalExpr env (CallExpr name argsExpr) = do
             case func of
                 (Function idd args stmts) -> do
                     addState env
-                    result <- mapM (evalExpr env) argsExpr
-                    let vars = (zip (map (\(Id a) -> a) args) result)
+                    result <- mapM (evalExpr env) argsExpr -- avalia os argumentos
+                    let vars = (zip (map (\(Id a) -> a) args) result) -- faz tuplas de chave,valor
                     createLocalVars vars
                     res <- evalStmt env (BlockStmt stmts)
                     removeState env
@@ -130,7 +130,11 @@ evalStmt env (IfStmt expr stmt1 stmt2) = do
             res <- evalStmt env stmt1
             removeState env
             return res
-        else evalStmt env stmt2
+        else do
+            addState env
+            res <- evalStmt env stmt2
+            removeState env
+            return res
         _ -> error $ "Not a valid expression"
 
 -- While 
@@ -172,7 +176,7 @@ evalStmt env (ReturnStmt maybeExpr) = do
             return $ Return val
         Nothing -> return Nil
 
--- ForStmt for normal (MODIFICADO?)
+-- ForStmt for normal
 evalStmt env (ForStmt initial test inc stmt) = do
     v <- evalForInit env initial
     testRes <- evalForTest env test -- Asks if the loop should continue
@@ -261,8 +265,8 @@ infixOp env OpNEq  (Bool v1) (Bool v2) = return $ Bool $ v1 /= v2
 infixOp env OpLAnd (Bool v1) (Bool v2) = return $ Bool $ v1 && v2
 infixOp env OpLOr  (Bool v1) (Bool v2) = return $ Bool $ v1 || v2
 
--- comparação de listas
--- igualdade
+-- Comparação de listas
+-- Igualdade
 infixOp env OpEq   (List  []) (List  []) = return $ Bool True
 infixOp env OpEq   (List  []) (List  _) = return $ Bool False
 infixOp env OpEq   (List  _) (List  []) = return $ Bool False
@@ -272,7 +276,7 @@ infixOp env OpEq   (List  (l:ls)) (List  (x:xs)) = do
     infixOp env OpLAnd result resto
 
 
--- diferença
+-- Diferença
 infixOp env OpNEq   (List  []) (List  []) = return $ Bool False
 infixOp env OpNEq   (List  []) (List  _) = return $ Bool True
 infixOp env OpNEq   (List  _) (List  []) = return $ Bool True
@@ -290,19 +294,8 @@ infixOp _ _ val1 val2 = error $ "infixOp error with " ++ (show val1) ++ " and " 
 environment :: StateT
 environment = [Map.empty]
 
-{-
-Procura por uma variavel chamada var por todos os estados, iniciando do mais local até
-o mais global. Caso encontre, apenas retorna seu valor. Caso ele chegue até o estado global
-e não tenha encontrado nada, ele retorna o construtor GlobalVar para indicar que não
-encontrou nada. A flag GlobalVar serve para variaveis automaticamente globais, já que caso ela não
-exista na memória, ~essa atribuição criará uma variável global
--} 
--- adaptado
-{- serve para pegar o valor de uma variavel ja existente em alguma das
-memorias e tbm é usado pra checar se uma variavel existe na memoria, caso nao exista, ele retorna GlobalVar. 
-Isso serve para a declaração de variaveis automaticamente globais. (ver caso do AssignExpr)
--}
 
+-- look for state
 stateLookup :: StateT -> String -> StateTransformer Value
 stateLookup env var = ST $ \s ->
     let pops [] _ = Nothing
@@ -311,12 +304,11 @@ stateLookup env var = ST $ \s ->
                 Nothing -> pops states var
                 Just v -> Just v
     in case pops s var of
-        Nothing -> (GlobalVar, s) -- nao achou em nenhuma memoria
+        Nothing -> (GlobalVarFlag, s) -- nao achou em nenhuma memoria
         Just v -> (v, s) -- achou em alguma memoria
 
-{-
-Declara uma variavel no escopo local, podendo ou não guardar um valor
--}
+
+-- Declara uma variavel no escopo local, podendo ou não guardar um valor
 varDecl :: StateT -> VarDecl -> StateTransformer Value
 varDecl env (VarDecl (Id id) maybeExpr) = do
     case maybeExpr of
@@ -325,10 +317,9 @@ varDecl env (VarDecl (Id id) maybeExpr) = do
             val <- evalExpr env expr
             createLocalVar id val
 
-{-
-Procura, a partir de um estado local até o global, uma variável chamada var para
-setar seu valor como val.
--}
+
+-- Procura, a partir de um estado local até o global, uma variável chamada var para
+-- setar seu valor como val.
 setVar :: String -> Value -> StateTransformer Value
 setVar var val = ST $ \s -> (val, setVarIntoState s)
     where
@@ -343,9 +334,7 @@ setVars ((id, val):vars) = do
     setVar id val
     setVars vars
 
-{-
-Cria uma variavel APENAS no escopo local
--}
+-- Cria uma variavel APENAS no escopo mais local
 createLocalVar :: String -> Value -> StateTransformer Value
 createLocalVar var val = ST $ \(s:states) -> (val, (insert var val s):states)
 
@@ -355,24 +344,20 @@ createLocalVars ((id, val):vars) = do -- var y = 0;
     createLocalVar id val
     createLocalVars vars
 
-{-
-Percorre os estados de memória até o global e cria uma variável APENAS no global
--}
-createGlobalVar :: String -> Value -> StateTransformer Value
-createGlobalVar var val = ST $ \s -> (val, pipi var val s)
-    where
-        pipi var val (state:[]) = (insert var val state):[]
-        pipi var val (state:states) = state:(pipi var val states)
 
-{-
-Adiciona uma camada (escopo) de memória mais local
--}
+-- Percorre os estados de memória até o global e cria uma variável APENAS no global
+createGlobalVar :: String -> Value -> StateTransformer Value
+createGlobalVar var val = ST $ \s -> (val, global var val s)
+    where
+        global var val (state:[]) = (insert var val state):[]
+        global var val (state:states) = state:(global var val states)
+
+-- Adiciona uma camada (escopo) de memória mais local
 addState :: StateT -> StateTransformer Value
 addState env = ST $ \s -> (Nil, Map.empty:s)
 
-{-
-Remove a camada (escopo) de memória mais local
--}
+
+-- Remove a camada (escopo) de memória mais local
 removeState :: StateT -> StateTransformer Value
 removeState env = ST $ \(s:states) -> (Nil, states)
 

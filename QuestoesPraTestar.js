@@ -143,4 +143,37 @@ function quicksort (array){
     array = aux.concat(greater);
     return array;
 }
+
+------------------------------------
+-- doWhile
+var f = 0;
+var i = 0;
+
+do {
+    f = f - 1;
+    i = i + 1;
+    if (i > 5) {
+        break;
+    };
+ } while (i < 10);
+ f;
+
+------------------------------------
+-- .head e .tail
+var lista = [1,2,3,4];
+
+function inverte(array){
+    if (array == []) {
+        return [];
+    } else {
+        var cabeca = array.head;
+        var cauda = array.tail;
+        return (inverte(cauda).concat(cabeca));
+    }
+}
+inverte(lista);
+
+
+
+
 //var x = quicksort([3,4,1,5,9]);

@@ -12,7 +12,7 @@ data Value = Bool Bool
     | Function Id [Id] [Statement]
     | Return Value
     | Error String
-    | GlobalVar
+    | GlobalVarFlag
 
 --
 -- Pretty Printer
@@ -30,7 +30,7 @@ instance Show Value where
   show Continue = "Continue"
   show (Function (Id name) args stmt) = "Function " ++ name
   show (Return val) = show val
-  show GlobalVar = "global var"
+  show GlobalVarFlag = "global var"
 
   
 -- This function could be replaced by (unwords.map show). The unwords
